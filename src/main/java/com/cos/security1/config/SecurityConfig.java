@@ -21,14 +21,16 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/user/**").authenticated() // /user로 들어오면 인증 필요
+                        .requestMatchers("/user/**").authenticated() // 인증만 되면 접근 가능
                         .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN") // 특정 권한 필요
                         .requestMatchers("/admin/**").hasRole("ADMIN") // 관리자 권한 필요
                         .anyRequest().permitAll() // 그 외 권한 허용
                 );
 
         http.formLogin(form -> form
-                .loginPage("/loginForm"));
+                .loginPage("/loginForm")
+                .loginProcessingUrl("/login") // login 주소가 호출 -> 시큐리티가 낚아채서 로그인 대신 진행
+                .defaultSuccessUrl("/"));
         return http.build();
     }
 }
