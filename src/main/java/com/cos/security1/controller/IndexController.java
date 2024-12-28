@@ -1,11 +1,15 @@
 package com.cos.security1.controller;
 
+import com.cos.security1.config.auth.PrincipalDetails;
 import com.cos.security1.model.User;
 import com.cos.security1.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +23,28 @@ public class IndexController {
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    @GetMapping("/test/login")
+    public @ResponseBody String testLogin(Authentication authentication, // getUser 방법1
+                                          @AuthenticationPrincipal PrincipalDetails userDetails) { // 방법2
+        System.out.println("/test/login ==========================");
+        PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
+        System.out.println("authentication : " + principalDetails.getUser());
+
+        System.out.println("userDetails : " + userDetails.getUser());
+        return "세션 정보 확인하기";
+    }
+
+    @GetMapping("/test/oauth/login")
+    public @ResponseBody String testOAuthLogin(Authentication authentication,
+                                               @AuthenticationPrincipal OAuth2User oAuth) {
+        System.out.println("/test/oauth/login ==========================");
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        System.out.println("oAuth2User : " + oAuth2User.getAttributes());
+
+        System.out.println("oAuth : " + oAuth.getAttributes());
+        return "OAuth 세션 정보 확인하기";
+    }
+
     @GetMapping({"", "/"})
     public String index() {
         // mustache 기본폴더 src/main/resources
@@ -26,8 +52,10 @@ public class IndexController {
         return "index";
     }
 
+    // 일반 로그인도, OAuth 로그인도 PrincipalDetails 로 받음
     @GetMapping("/user")
-    public @ResponseBody String user() {
+    public @ResponseBody String user(@AuthenticationPrincipal PrincipalDetails principalDetails) {
+        System.out.println("principalDetails : " + principalDetails.getUser());
         return "user";
     }
 
@@ -55,7 +83,7 @@ public class IndexController {
     @PostMapping("/join")
     public String join(User user) {
         System.out.println(user);
-        user.setRole("ROLE_ USER");
+        user.setRole("ROLE_USER");
 
         String rawPassword = user.getPassword();
         String encPassword = bCryptPasswordEncoder.encode(rawPassword);
